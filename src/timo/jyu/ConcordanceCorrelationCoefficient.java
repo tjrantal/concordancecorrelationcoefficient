@@ -12,13 +12,25 @@ public class ConcordanceCorrelationCoefficient{
 	double[] vec1;
 	double[] vec2;
 	public double anaDone;
+	
+	/**
+		Calculate concordance correlation coefficient between input vectors sliding the second vector over all possible epochs in the first. First input should always be longer than the second
+		@param vec1 vector one, should be longer than vector 2
+		@param vec2 vector two, should be shorter than vector 1
+	*/
+	
 	public ConcordanceCorrelationCoefficient(double[] vec1,double[] vec2){
 		anaDone = 0d;
 		List<Thread> threads = new ArrayList<Thread>();
-		List<ConcRunnable> concRunnables = new ArrayList<ConcRunnable>();	
-		this.vec1 = vec1;
-		this.vec2 = vec2;
-		coefficients = (vec1.length >= vec2.length) ? new double[vec1.length-vec2.length+1] : new double[vec2.length-vec1.length+1];
+		List<ConcRunnable> concRunnables = new ArrayList<ConcRunnable>();
+		if (vec1.length > vec2.length){
+			this.vec1 = vec1;
+			this.vec2 = vec2;
+		}else{
+			this.vec2 = vec1;
+			this.vec1 = vec2;
+		}
+		coefficients = new double[vec1.length-vec2.length+1];
 		/*Create 4 threads for the calculation*/
 		int[] inits = new int[]{0, coefficients.length/4, coefficients.length*2/4, coefficients.length*3/4};
 		int[] ends = new int[]{inits[1], inits[2], inits[3], coefficients.length};
@@ -91,69 +103,26 @@ public class ConcordanceCorrelationCoefficient{
 			t2[i] = v2[i]-meanv2;
 			sumtop += t1*t2[i];
 		}
-		double cCoeff = sumtop/(Math.sqrt(var1/lengthScale)*Math.sqrt(var2/lengthScale));
-		coeffs[init] = 2*cCoeff*Math.sqrt(var1)*Math.sqrt(var2)/(var1+var2+Math.pow(meanv1-meanv2,2d));
+		sumtop*=lengthScale;	//Normalise the covariance
+		
+		coeffs[init] = 2*sumtop/(var1+var2+Math.pow(meanv1-meanv2,2d));
 		/*Update v1 values by taking of the first, and adding a new data point*/
 		for (int i = init+1;i<end;++i){
 			/*add next data point*/
-			meanv1-=lengthScale*v1[i-1];
-			meanv1+= lengthScale*(v1[i+length-1]);	//Update mean
+			meanv1-=lengthScale*v1[i-1];	//remove the first data point
+			meanv1+= lengthScale*(v1[i+length-1]);	//add the last
+			
 			/*Recalculate sumtop*/
 			sumtop= 0;
 			for (int j = 0; j<length;++j){
 				t1 = v1[i+j]-meanv1;
 				sumtop+=t1*t2[j];
 			}
-			var1 = variance(v1,i,length);
-			cCoeff = sumtop/(Math.sqrt(var1/lengthScale)*Math.sqrt(var2/lengthScale));
-			coeffs[i] = 2*cCoeff*Math.sqrt(var1)*Math.sqrt(var2)/(var1+var2+Math.pow(meanv1-meanv2,2d));
+			sumtop*=lengthScale;	//Normalise the covariance
+			var1 = variance(v1,i,length);	//Variance has to be recalculated as mean has changed
+			coeffs[i] = 2*sumtop/(var1+var2+Math.pow(meanv1-meanv2,2d));
 		}
 		return coeffs;
-	}
-	
-	
-	/**
-		Calculate concordance correlation coefficient
-		@param v1 vector one
-		@param v2 vector two
-		@return concordance correlation coefficients between v1, and v2
-	*/
-	public static double concCorrCoeff(double[] v1,double[] v2){
-		double var1 = variance(v1);
-		double var2 = variance(v2);
-		double meanv1 = mean(v1);
-		double meanv2 = mean(v2);
-		double cCoeff = corrCoeff(v1,v2,meanv1,meanv2);
-		return 2*cCoeff*Math.sqrt(var1)*Math.sqrt(var2)/(var1+var2+Math.pow(meanv1-meanv2,2d));
-	}
-	
-	/** 
-		@param v1 vector one
-		@param v2 vector two
-		@return correlation coefficients between v1, and v2
-	*/
-	public static double corrCoeff(double[] v1,double[] v2){
-		return corrCoeff(v1,v2,mean(v1),mean(v2));
-	}
-
-	/** 
-		@param v1 vector one
-		@param v2 vector two
-		@return correlation coefficients between v1, and v2
-	*/
-	public static double corrCoeff(double[] v1,double[] v2,double meanv1, double meanv2){
-		double sumtop = 0;
-		double sqSumv1 = 0;
-		double sqSumv2 = 0;
-		double t1,t2;
-		for (int i = 0;i<v1.length;++i){
-			t1 = v1[i]-meanv1;
-			t2 = v2[i]-meanv2;
-			sumtop += t1*t2;
-			sqSumv1 += t1*t1;
-			sqSumv2 += t2*t2;
-		}
-		return sumtop/(Math.sqrt(sqSumv1)*Math.sqrt(sqSumv2));
 	}
 	
 	/*
