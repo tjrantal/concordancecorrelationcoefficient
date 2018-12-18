@@ -6,4 +6,4 @@ I have used this to synchronise two signals with non-similar amplitudes. Cross-c
 Written by Timo Rantalainen 2013 - 2018 tjrantal at gmail dot com. Released to the public domain.
 
 
-Look into build.xml for building with ant. Usage sample from Matlab in test.m
+Build with gradle (cd into this folder from the command line, run 'gradle jar' [check compile.bat for furher help]). Usage sample from Matlab in test.m

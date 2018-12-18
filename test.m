@@ -1,7 +1,7 @@
 close all;
 clear all;
 clc;
-javaaddpath('build/ConcordanceCorrelationCoefficient.jar');
+javaaddpath('build/libs/concordancecorrelationcoefficient-1.0.jar');
 t = 0:0.01:10;
 testSig1 =  sin(t);
 testSig2 =  cos(t);
