@@ -7,12 +7,8 @@ package timo.jyu;
 */
 import java.util.List;
 import java.util.ArrayList;
-public class ConcordanceCorrelationCoefficient{
-	public double[] coefficients;
-	double[] vec1;
-	double[] vec2;
-	public double anaDone;
-	
+public class ConcordanceCorrelationCoefficient extends BaseConcordanceClass{
+
 	/**
 		Calculate concordance correlation coefficient between input vectors sliding the second vector over all possible epochs in the first. First input should always be longer than the second
 		@param vec1 vector one, should be longer than vector 2
@@ -21,8 +17,6 @@ public class ConcordanceCorrelationCoefficient{
 	
 	public ConcordanceCorrelationCoefficient(double[] vec1,double[] vec2){
 		anaDone = 0d;
-		List<Thread> threads = new ArrayList<Thread>();
-		List<ConcRunnable> concRunnables = new ArrayList<ConcRunnable>();
 		if (vec1.length > vec2.length){
 			this.vec1 = vec1;
 			this.vec2 = vec2;
@@ -31,6 +25,14 @@ public class ConcordanceCorrelationCoefficient{
 			this.vec1 = vec2;
 		}
 		coefficients = new double[vec1.length-vec2.length+1];
+		run();
+		
+	}
+	
+	@Override
+	protected void run(){
+		List<Thread> threads = new ArrayList<Thread>();
+		List<ConcRunnable> concRunnables = new ArrayList<ConcRunnable>();
 		/*Create 4 threads for the calculation*/
 		int[] inits = new int[]{0, coefficients.length/4, coefficients.length*2/4, coefficients.length*3/4};
 		int[] ends = new int[]{inits[1], inits[2], inits[3], coefficients.length};
@@ -52,11 +54,6 @@ public class ConcordanceCorrelationCoefficient{
 			//System.out.println("Got coeffs "+i);
 		}
 		anaDone = 1d;
-		
-	}
-	public static double getDone(){
-		double doneA = 12;
-		return doneA;
 	}
 	
 	
@@ -125,69 +122,5 @@ public class ConcordanceCorrelationCoefficient{
 		return coeffs;
 	}
 	
-	/*
-		Calculate mean
-		@param data one dimensional array
-		@return the mean of data
-	*/
-	public static double mean(double[] data){
-		double sum = 0;
-		for (int i = 0; i<data.length; ++i){
-			sum+= data[i];
-		}
-		sum/=((double) data.length);
-		return sum;
-	}
 	
-	/*
-		Calculate mean for a portion of a vector
-		@param data one dimensional array
-		@param init the index to start from
-		@param length the length of the section to include
-		@return the mean of data
-	*/
-	public static double mean(double[] data,int init, int length){
-		double sum = 0;
-		for (int i = init; i<init+length; ++i){
-			sum+= data[i];
-		}
-		sum/=((double) length);
-		return sum;
-	}
-	
-	/*
-		calculate variance
-		@param data one dimensional array
-		@return the variance of data
-	*/
-	public static double variance(double[] data){
-		double variance = 0;
-		double meanv = mean(data);
-		double t;
-		for (int i = 0; i<data.length; ++i){
-			t = data[i]-meanv;
-			variance+= t*t;
-		}
-		variance/=((double) data.length);
-		return variance;
-	}
-	
-	/*
-		Calculate variance for a portion of a vector
-		@param data one dimensional array
-		@param init the index to start from
-		@param length the length of the section to include
-		@return the variance of data
-	*/
-	public static double variance(double[] data,int init, int length){
-		double variance = 0;
-		double meanv = mean(data,init,length);
-		double t;
-		for (int i = init; i<init+length; ++i){
-			t = data[i]-meanv;
-			variance+= t*t;
-		}
-		variance/=((double) length);
-		return variance;
-	}
 }
